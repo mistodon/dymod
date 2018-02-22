@@ -1,0 +1,9 @@
+[package]
+name = "subcrate"
+version = "0.1.0"
+authors = ["***Realname*** ***Lastname*** <***redacted.email@redacted.nope***>"]
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]

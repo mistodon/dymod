@@ -2,6 +2,11 @@
 name = "dymod"
 version = "0.1.0"
 authors = ["Claire Harris <claire.harris.000@gmail.com>"]
+description = """A macro to allow hotswapping code for a module in debug mode, but statically linking it safely in release mode."""
+repository = "https://github.com/Pirh/dymod"
+readme = "README.md"
+keywords = ["linking", "static", "dynamic", "hotswapping", "dylib"]
+license = "CC0-1.0"
 
 [dependencies]
 sharedlib = "~7.0.0"

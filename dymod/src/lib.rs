@@ -132,10 +132,9 @@
 //! }
 //! ```
 
-#[cfg(debug_assertions)]
+#[cfg(feature="hotswapping")]
 extern crate sharedlib;
-
-#[cfg(debug_assertions)]
+#[cfg(feature="hotswapping")]
 pub use sharedlib::{Lib, Func, Symbol};
 
 
@@ -179,7 +178,21 @@ pub use sharedlib::{Lib, Func, Symbol};
 ///
 /// As above, dynamic linking is inherently unsafe. In debug mode, these things can cause a
 /// variety of undefined behaviour. For example, see [`sharedlib`](https://docs.rs/sharedlib/7.0.0/sharedlib/#pitfalls), which this crate uses internally.
+
+#[cfg(not(feature="hotswapping"))]
+#[inline(always)]
+pub fn is_hotswapping_enabled() -> bool {
+	false
+}
+
+#[cfg(feature="hotswapping")]
+#[inline(always)]
+pub fn is_hotswapping_enabled() -> bool {
+	true
+}
+
 #[macro_export]
+#[cfg(not(feature="hotswapping"))]
 macro_rules! dymod
 {
     (
@@ -190,7 +203,23 @@ macro_rules! dymod
         }
     ) =>
     {
-        #[cfg(debug_assertions)]
+        #[path = $libpath]
+        pub mod $modname;
+	}
+}
+
+#[macro_export]
+#[cfg(feature="hotswapping")]
+macro_rules! dymod
+{
+    (
+        #[path = $libpath: tt]
+        pub mod $modname: ident
+        {
+            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) -> $returntype: ty;)*
+        }
+    ) =>
+    {
         pub mod $modname
         {
             use ::std::time::SystemTime;
@@ -205,10 +234,19 @@ macro_rules! dymod
                 unsafe
                 {
                     let dylibpath = {
+						use std::env::consts;
                         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
                         path.push(stringify!($modname));
-                        path.push("target/debug");
-                        path.push(&format!("lib{}.dylib", stringify!($modname)));
+
+						println!("gonna debugassert");
+
+						if cfg!(debug_assertions) {
+							path.push("target/debug");
+						} else {
+							path.push("target/release");
+						}
+                        path.push(&format!("{}{}{}", consts::DLL_PREFIX, stringify!($modname), consts::DLL_SUFFIX));
+						println!("{:?}", path);
                         path
                     };
 
@@ -236,22 +274,18 @@ macro_rules! dymod
             }
 
             $(
-            pub fn $fnname($($argname: $argtype),*) -> $returntype
-            {
-                let lib = load_lib();
-                unsafe
-                {
-                    let sym: Func<fn($($argtype),*) -> $returntype> =
-                        lib.find_func(stringify!($fnname)).unwrap();
-                    let symfn = sym.get();
-                    symfn($($argname),*)
-                }
-            }
-            )*
-        }
-
-        #[cfg(not(debug_assertions))]
-        #[path = $libpath]
-        pub mod $modname;
-    }
+				pub fn $fnname($($argname: $argtype),*) -> $returntype
+				{
+					let lib = load_lib();
+					unsafe
+					{
+						let sym: Func<fn($($argtype),*) -> $returntype> =
+							lib.find_func(stringify!($fnname)).unwrap();
+						let symfn = sym.get();
+						symfn($($argname),*)
+					}
+				}
+			)*
+		}
+	}
 }

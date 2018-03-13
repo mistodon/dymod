@@ -1,11 +1,18 @@
 # dymod
 
-This crate provides a macro, `dymod!`, which allows you to specify a Rust module which will by dynamically loaded and hotswapped in debug mode, but statically linked in release mode.
+This crate provides a macro, `dymod!`, which allows you to specify a Rust module which will by dynamically loaded and hotswapped, or  statically linked, depending on the "hotswapping" cargo feature.
 
 Note that this is _very_ much experimental. The current version of this crate is very opinionated about how you structure your dynamic code. Hopefully this will be relaxed a little in future.
 
 
 ## Usage
+
+Add the following dependency to your main crate:
+
+```toml
+[dependencies.dymod]
+features = ["hotswapping"]
+```
 
 Your dynamically loaded code should be placed in its own sub-crate under your main crate:
 
@@ -20,7 +27,7 @@ mycrate/
       lib.rs
 ```
 
-Your subcrate must also be compiled as a dylib, so in your `subcrate/Cargo.toml` add:
+Additionally, your subcrate must be compiled as a dylib, so in your `subcrate/Cargo.toml` add:
 
 ```toml
 [lib]
@@ -77,9 +84,9 @@ fn main()
 
 ## Safety
 
-This is really, really unsafe! But only in debug mode. In release mode, the module you specify is linked statically as if it was a regular module, and there should be no safety concerns.
+This is really, really unsafe! But only when dymod's `features = ["hotswapping"]` is enabled. Otherwise, the module you specify is linked statically as if it was a regular module, and there should be no safety concerns.
 
-Here is a partial list of what can go wrong in debug mode:
+Here is a partial list of what can go wrong in hotswapping mode:
 
 -   If you are holding on to data owned by the dylib when the dylib is hotswapped, you will get undefined behaviour.
 -   If you take ownership of any data allocated by the dylib, dropping that data will probably cause a segfault.

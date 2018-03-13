@@ -5,3 +5,4 @@ authors = ["Claire Harris <claire.harris.000@gmail.com"]
 
 [dependencies.dymod]
 path = "../dymod"
+features = ["hotswapping"]

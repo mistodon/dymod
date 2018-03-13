@@ -16,17 +16,13 @@ fn main()
 {
     println!();
 
-    #[cfg(debug_assertions)]
-    {
-        println!("You are running in debug mode.");
+    if dymod::is_hotswapping_enabled() {
+        println!("You are running in hotswapping mode.");
         println!("Make changes to subcrate/src/lib.rs");
         println!("Then run `cargo build` in the subcrate directory.");
         println!("You should see your changes apply while this code runs:");
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        println!("You are running in release mode.");
+    } else {
+        println!("You are running in static mode.");
         println!("The `subcrate` module has been statically linked.");
         println!("Any changes made to subcrate/src/lib.rs will not apply until this program is recompiled.");
     }

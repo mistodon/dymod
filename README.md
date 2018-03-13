@@ -1,6 +1,6 @@
 # dymod
 
-A macro to allow hotswapping code for a module in debug mode, but statically linking it safely in release mode.
+A macro to allow hotswapping code for a module, or safely statically linking it, depending on the `hotswapping` Cargo feature.
 
 This repository contains `dymod`, the library itself, and `test_dymod` which is a crate for testing `dymod`.
 

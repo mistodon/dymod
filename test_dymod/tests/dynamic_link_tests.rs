@@ -1,4 +1,4 @@
-#![cfg(debug_assertions)]
+//#![cfg(feature="hotswapping")]
 
 #[macro_use]
 extern crate dymod;

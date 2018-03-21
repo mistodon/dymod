@@ -20,11 +20,11 @@
 //!       lib.rs
 //! ```
 //!
-//! Your subcrate must also be compiled as a dylib, so in your `subcrate/Cargo.toml` add:
+//! Your subcrate must also be compiled as a cdylib, so in your `subcrate/Cargo.toml` add:
 //!
 //! ```toml
 //! [lib]
-//! crate-type = ["dylib"]
+//! crate-type = ["cdylib"]
 //! ```
 //!
 //! Now you need to add the code that you want to hotswap. Any functions should be `pub` and `#[no_mangle]`. See the [Limitations]("#limitations") section below for what kind of code you can put here.
@@ -133,10 +133,10 @@
 //! ```
 
 #[cfg(debug_assertions)]
-extern crate sharedlib;
+extern crate libloading;
 
 #[cfg(debug_assertions)]
-pub use sharedlib::{Lib, Func, Symbol};
+pub use libloading::{Library, Symbol};
 
 
 /// Takes a module definition and allows it to be hotswapped in debug mode.
@@ -195,12 +195,12 @@ macro_rules! dymod
         {
             use ::std::time::SystemTime;
             use ::std::path::PathBuf;
-            use $crate::{Lib, Func, Symbol};
+            use $crate::{Library, Symbol};
 
-            static mut DYLIB: Option<Lib> = None;
+            static mut DYLIB: Option<Library> = None;
             static mut MODIFIED_TIME: Option<SystemTime> = None;
 
-            fn load_lib() -> &'static Lib
+            fn load_lib() -> &'static Library
             {
                 unsafe
                 {
@@ -227,7 +227,7 @@ macro_rules! dymod
                             DYLIB = None;
                         }
 
-                        let lib = Lib::new(&dylibpath).unwrap();
+                        let lib = Library::new(&dylibpath).unwrap();
                         DYLIB = Some(lib);
                     }
 
@@ -241,10 +241,9 @@ macro_rules! dymod
                 let lib = load_lib();
                 unsafe
                 {
-                    let sym: Func<fn($($argtype),*) -> $returntype> =
-                        lib.find_func(stringify!($fnname)).unwrap();
-                    let symfn = sym.get();
-                    symfn($($argname),*)
+                    let symbol: Symbol<fn($($argtype),*) -> $returntype> =
+                        lib.get(stringify!($fnname).as_bytes()).unwrap();
+                    symbol($($argname),*)
                 }
             }
             )*

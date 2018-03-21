@@ -20,11 +20,11 @@ mycrate/
       lib.rs
 ```
 
-Your subcrate must also be compiled as a dylib, so in your `subcrate/Cargo.toml` add:
+Your subcrate must also be compiled as a cdylib, so in your `subcrate/Cargo.toml` add:
 
 ```toml
 [lib]
-crate-type = ["dylib"]
+crate-type = ["cdylib"]
 ```
 
 Now you need to add the code that you want to hotswap. Any functions should be `pub` and `#[no_mangle]`. See the [Limitations]("#limitations") section below for what kind of code you can put here.

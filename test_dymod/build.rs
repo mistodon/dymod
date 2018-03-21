@@ -1,5 +1,4 @@
-fn main()
-{
+fn main() {
     // Create library
     {
         use std::io::Write;
@@ -19,8 +18,8 @@ fn main()
         }
         "#;
 
-        let mut file = std::fs::File::create("subcrate/src/lib.rs")
-            .expect("Failed to create test lib.");
+        let mut file =
+            std::fs::File::create("subcrate/src/lib.rs").expect("Failed to create test lib.");
 
         file.write_all(LIB.as_bytes())
             .expect("Failed to write test lib source.");

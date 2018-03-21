@@ -4,6 +4,6 @@ version = "0.1.0"
 authors = ["Claire Harris <claire.harris.000@gmail.com>"]
 
 [lib]
-crate-type = ["dylib"]
+crate-type = ["cdylib"]
 
 [dependencies]

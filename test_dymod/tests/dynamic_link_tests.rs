@@ -3,7 +3,6 @@
 #[macro_use]
 extern crate dymod;
 
-
 dymod!
 {
     #[path = "../subcrate/src/lib.rs"]
@@ -13,10 +12,8 @@ dymod!
     }
 }
 
-
 #[test]
-fn subcrate_is_dynamically_loaded_and_hotswapped()
-{
+fn subcrate_is_dynamically_loaded_and_hotswapped() {
     // Test that it works at all
     {
         assert_eq!(subcrate::count_sheep(0), "None");
@@ -38,8 +35,7 @@ fn subcrate_is_dynamically_loaded_and_hotswapped()
             }
             "#;
 
-        let mut file = std::fs::File::create("subcrate/src/lib.rs")
-            .expect("Failed to create lib.");
+        let mut file = std::fs::File::create("subcrate/src/lib.rs").expect("Failed to create lib.");
 
         file.write_all(UPDATED_LIB.as_bytes())
             .expect("Failed to write to lib.");

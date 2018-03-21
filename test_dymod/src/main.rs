@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate dymod;
 
-
 dymod!
 {
     #[path = "../subcrate/src/lib.rs"]
@@ -11,9 +10,7 @@ dymod!
     }
 }
 
-
-fn main()
-{
+fn main() {
     #[cfg(debug_assertions)]
     const MESSAGE: &str = "
 You are running in debug mode.
@@ -30,8 +27,7 @@ Any changes made to subcrate/src/lib.rs will not apply until this program is rec
     println!("{}", MESSAGE);
     println!("\nPress Ctrl+C to quit.\n");
 
-    loop
-    {
+    loop {
         let num_sheep = 3;
         let message = subcrate::count_sheep(num_sheep);
         println!("There are '{}' sheep.", message);

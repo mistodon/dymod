@@ -1,0 +1,4 @@
+language: rust
+script:
+    -   (cd test_dymod && cargo test)
+    -   (cd test_dymod && cargo test --release)

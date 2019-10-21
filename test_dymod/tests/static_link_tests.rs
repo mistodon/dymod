@@ -1,4 +1,11 @@
-#![cfg(not(debug_assertions))]
+#![cfg(any(
+    feature = "force-static",
+    all(
+        not(feature = "force-dynamic"),
+        not(feature = "auto-reload"),
+        not(debug_assertions)
+    )
+))]
 
 #[macro_use]
 extern crate dymod;
@@ -50,6 +57,9 @@ fn subcrate_is_statically_linked_and_not_hotswapped() {
             .output()
             .unwrap();
     }
+
+    // We would have reloaded, if we could have, because of the
+    // `auto-reload` feature under `force-static` in this test crate.
 
     // Test that it has NOT changed
     {

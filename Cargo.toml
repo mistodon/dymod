@@ -1,6 +1,6 @@
 [package]
 name = "dymod"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Claire Harris <claire.harris.000@gmail.com>"]
 edition = "2018"
 description = """A macro to allow hotswapping code for a module in debug mode, but statically linking it safely in release mode."""
@@ -9,5 +9,14 @@ readme = "README.md"
 keywords = ["linking", "static", "dynamic", "hotswapping", "dylib"]
 license = "CC0-1.0"
 
+[badges]
+travis-ci = { repository = "mistodon/dymod", branch = "master" }
+
 [dependencies]
 libloading = "~0.5.0"
+
+[features]
+default = []
+force-static = []
+force-dynamic = []
+auto-reload = []

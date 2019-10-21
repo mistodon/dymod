@@ -6,3 +6,9 @@ edition = "2018"
 
 [dependencies.dymod]
 path = ".."
+
+[features]
+default = ["dymod/auto-reload"]
+force-static = ["dymod/force-static", "dymod/auto-reload"]
+force-dynamic = ["dymod/force-dynamic"]
+auto-reload = ["dymod/force-dynamic", "dymod/auto-reload"]

@@ -141,7 +141,10 @@
 //! }
 //! ```
 
-#[cfg(debug_assertions)]
+#[cfg(any(
+    feature = "force-dynamic",
+    all(not(feature = "force-static"), debug_assertions)
+))]
 pub use libloading::{Library, Symbol};
 
 /// Takes a module definition and allows it to be hotswapped in debug
@@ -189,59 +192,73 @@ pub use libloading::{Library, Symbol};
 ///
 /// As above, dynamic linking is inherently unsafe. In debug mode,
 /// these things can cause a variety of undefined behaviour.
+#[cfg(any(
+    feature = "force-static",
+    all(not(feature = "force-dynamic"), not(debug_assertions))
+))]
 #[macro_export]
-macro_rules! dymod
-{
+macro_rules! dymod {
     (
         #[path = $libpath: tt]
         pub mod $modname: ident {
             $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) -> $returntype: ty;)*
         }
     ) => {
-        #[cfg(debug_assertions)]
+        #[path = $libpath]
+        pub mod $modname;
+    }
+}
+
+#[cfg(all(
+    any(
+        feature = "force-dynamic",
+        all(not(feature = "force-static"), debug_assertions,)
+    ),
+    not(feature = "auto-reload")
+))]
+#[macro_export]
+macro_rules! dymod {
+    (
+        #[path = $libpath: tt]
+        pub mod $modname: ident {
+            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) -> $returntype: ty;)*
+        }
+    ) => {
         pub mod $modname {
-            use std::time::SystemTime;
-            use std::path::PathBuf;
             use $crate::{Library, Symbol};
 
             static mut DYLIB: Option<Library> = None;
-            static mut MODIFIED_TIME: Option<SystemTime> = None;
+            const DYLIB_PATH: &'static str = concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/",
+                stringify!($modname),
+                "/target/debug/lib",
+                stringify!($modname),
+                ".dylib");
 
-            fn load_lib() -> &'static Library {
+            pub fn reload() {
+                // We have to drop it before replacing it.
                 unsafe {
-                    let dylibpath = {
-                        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-                        path.push(stringify!($modname));
-                        path.push("target/debug");
-                        path.push(&format!("lib{}.dylib", stringify!($modname)));
-                        path
-                    };
-
-                    let file_changed = {
-                        let metadata = ::std::fs::metadata(&dylibpath).unwrap();
-                        let modified_time = metadata.modified().unwrap();
-                        let changed = MODIFIED_TIME != Some(modified_time);
-                        MODIFIED_TIME = Some(modified_time);
-                        changed
-                    };
-
-                    if DYLIB.is_none() || file_changed {
-                        // We need to drop the dylib before we reload it.
-                        {
-                            DYLIB = None;
-                        }
-
-                        let lib = Library::new(&dylibpath).unwrap();
-                        DYLIB = Some(lib);
+                    {
+                        DYLIB = None;
                     }
 
+                    DYLIB = Some(Library::new(&DYLIB_PATH).unwrap())
+                }
+            }
+
+            fn dymod_get_lib() -> &'static Library {
+                unsafe {
+                    if DYLIB.is_none() {
+                        reload();
+                    }
                     DYLIB.as_ref().unwrap()
                 }
             }
 
             $(
             pub fn $fnname($($argname: $argtype),*) -> $returntype {
-                let lib = load_lib();
+                let lib = dymod_get_lib();
                 unsafe {
                     let symbol: Symbol<fn($($argtype),*) -> $returntype> =
                         lib.get(stringify!($fnname).as_bytes()).unwrap();
@@ -250,9 +267,78 @@ macro_rules! dymod
             }
             )*
         }
+    }
+}
 
-        #[cfg(not(debug_assertions))]
-        #[path = $libpath]
-        pub mod $modname;
+#[cfg(all(
+    any(
+        feature = "force-dynamic",
+        all(not(feature = "force-static"), debug_assertions,)
+    ),
+    feature = "auto-reload"
+))]
+#[macro_export]
+macro_rules! dymod {
+    (
+        #[path = $libpath: tt]
+        pub mod $modname: ident {
+            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) -> $returntype: ty;)*
+        }
+    ) => {
+        pub mod $modname {
+            use std::time::SystemTime;
+            use $crate::{Library, Symbol};
+
+            static mut DYLIB: Option<Library> = None;
+            static mut MODIFIED_TIME: Option<SystemTime> = None;
+            const DYLIB_PATH: &'static str = concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/",
+                stringify!($modname),
+                "/target/debug/lib",
+                stringify!($modname),
+                ".dylib");
+
+            pub fn reload() {
+                // We have to drop it before replacing it.
+                unsafe {
+                    {
+                        DYLIB = None;
+                    }
+
+                    DYLIB = Some(Library::new(&DYLIB_PATH).unwrap())
+                }
+            }
+
+            fn dymod_file_changed() -> bool {
+                let metadata = std::fs::metadata(&DYLIB_PATH).unwrap();
+                let modified_time = metadata.modified().unwrap();
+                unsafe {
+                    let changed = MODIFIED_TIME != Some(modified_time);
+                    MODIFIED_TIME = Some(modified_time);
+                    changed
+                }
+            }
+
+            fn dymod_get_lib() -> &'static Library {
+                unsafe {
+                    if DYLIB.is_none() || dymod_file_changed() {
+                        reload();
+                    }
+                    DYLIB.as_ref().unwrap()
+                }
+            }
+
+            $(
+            pub fn $fnname($($argname: $argtype),*) -> $returntype {
+                let lib = dymod_get_lib();
+                unsafe {
+                    let symbol: Symbol<fn($($argtype),*) -> $returntype> =
+                        lib.get(stringify!($fnname).as_bytes()).unwrap();
+                    symbol($($argname),*)
+                }
+            }
+            )*
+        }
     }
 }

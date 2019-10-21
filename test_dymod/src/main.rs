@@ -1,8 +1,7 @@
 #[macro_use]
 extern crate dymod;
 
-dymod!
-{
+dymod! {
     #[path = "../subcrate/src/lib.rs"]
     pub mod subcrate
     {

@@ -260,7 +260,7 @@ macro_rules! dymod {
             pub fn $fnname($($argname: $argtype),*) -> $returntype {
                 let lib = dymod_get_lib();
                 unsafe {
-                    let symbol: Symbol<fn($($argtype),*) -> $returntype> =
+                    let symbol: Symbol<extern fn($($argtype),*) -> $returntype> =
                         lib.get(stringify!($fnname).as_bytes()).unwrap();
                     symbol($($argname),*)
                 }
@@ -314,7 +314,7 @@ macro_rules! dymod {
                 let metadata = std::fs::metadata(&DYLIB_PATH).unwrap();
                 let modified_time = metadata.modified().unwrap();
                 unsafe {
-                    let changed = MODIFIED_TIME != Some(modified_time);
+                    let changed = MODIFIED_TIME.is_some() && MODIFIED_TIME != Some(modified_time);
                     MODIFIED_TIME = Some(modified_time);
                     changed
                 }

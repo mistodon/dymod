@@ -1,10 +1,8 @@
-#[macro_use]
-extern crate dymod;
+use dymod::dymod;
 
 dymod! {
     #[path = "../subcrate/src/lib.rs"]
-    pub mod subcrate
-    {
+    pub mod subcrate {
         fn count_sheep(sheep: u32) -> &'static str;
     }
 }

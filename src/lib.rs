@@ -333,7 +333,7 @@ macro_rules! dymod {
             pub fn $fnname($($argname: $argtype),*) -> $returntype {
                 let lib = dymod_get_lib();
                 unsafe {
-                    let symbol: Symbol<fn($($argtype),*) -> $returntype> =
+                    let symbol: Symbol<extern fn($($argtype),*) -> $returntype> =
                         lib.get(stringify!($fnname).as_bytes()).unwrap();
                     symbol($($argname),*)
                 }

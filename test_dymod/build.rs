@@ -3,20 +3,16 @@ fn main() {
     {
         use std::io::Write;
 
-        const LIB: &str = r#"
-        #[no_mangle]
-        pub fn count_sheep(sheep: u32) -> &'static str
-        {
-            match sheep
-            {
-                0 => "None",
-                1 => "One",
-                2 => "Two",
-                3 => "Many",
-                _ => "Lots"
-            }
-        }
-        "#;
+        const LIB: &str = r#"#[no_mangle]
+pub extern fn count_sheep(sheep: u32) -> &'static str {
+    match sheep {
+        0 => "None",
+        1 => "One",
+        2 => "Two",
+        3 => "Many",
+        _ => "Lots"
+    }
+}"#;
 
         let mut file =
             std::fs::File::create("subcrate/src/lib.rs").expect("Failed to create test lib.");

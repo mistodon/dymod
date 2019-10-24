@@ -9,6 +9,14 @@ This crate provides a macro, `dymod!`, which allows you to specify a Rust module
 Note that this is _very_ much experimental. The current version of this crate is very opinionated about how you structure your dynamic code. Hopefully this will be relaxed a little in future.
 
 
+## OS Compatibility
+
+| OS | Works? |
+|----|--------|
+| macOS |✅|
+| Linux |❌|
+| Windows |❌|
+
 ## Usage
 
 Your dynamically loaded code should be placed in its own sub-crate under your main crate:

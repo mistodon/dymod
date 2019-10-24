@@ -24,20 +24,20 @@ mycrate/
       lib.rs
 ```
 
-Your subcrate must also be compiled as a cdylib, so in your `subcrate/Cargo.toml` add:
+Your subcrate must also be compiled as a dylib, so in your `subcrate/Cargo.toml` add:
 
 ```toml
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["dylib"]
 ```
 
-Now you need to add the code that you want to hotswap. Any functions should be `pub` and `#[no_mangle]`. See the [Limitations]("#limitations") section below for what kind of code you can put here.
+Now you need to add the code that you want to hotswap. Any functions should be `pub extern` and `#[no_mangle]`. See the [Limitations]("#limitations") section below for what kind of code you can put here.
 
 ```rust
 // subcrate/src/lib.rs
 
 #[no_mangle]
-pub fn count_sheep(sheep: u32) -> &'static str {
+pub extern fn count_sheep(sheep: u32) -> &'static str {
     match sheep {
         0 => "None",
         1 => "One",
@@ -53,8 +53,7 @@ Finally, use the `dymod!` macro to specify your module, along with the functions
 ```rust
 // mycrate/src/main.rs
 
-#[macro_use]
-extern crate dymod;
+use dymod::dymod;
 
 dymod! {
     #[path = "../subcrate/src/lib.rs"]
@@ -103,21 +102,21 @@ Here are some examples of code that should work and would be useful to hotswap:
 
 ```rust
 #[no_mangle]
-pub fn game_update(state: &mut GameState) {
+pub extern fn game_update(state: &mut GameState) {
     // Modify game state.
     // No need to return anything problematic.
     unimplemented!()
 }
 
 #[no_mangle]
-pub fn animate_from_to(point_a: [f32; 2], point_b: [f32; 2], time: f32) -> [f32; 2] {
+pub extern fn animate_from_to(point_a: [f32; 2], point_b: [f32; 2], time: f32) -> [f32; 2] {
     // Returns only stack-allocated values and so is safe.
     // Specific kind of animation can be changed on the fly.
     unimplemented!()
 }
 
 #[no_mangle]
-pub fn get_configuration() -> Config {
+pub extern fn get_configuration() -> Config {
     // Again, returns only stack-allocated values.
     // Allows changing some configuration while running.
     Config {
@@ -125,3 +124,7 @@ pub fn get_configuration() -> Config {
     }
 }
 ```
+
+# Contributing
+
+All PRs welcome! For larger changes, it may be best to raise an issue first for feedback. Thanks!

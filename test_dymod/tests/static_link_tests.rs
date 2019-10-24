@@ -7,13 +7,11 @@
     )
 ))]
 
-#[macro_use]
-extern crate dymod;
+use dymod::dymod;
 
 dymod! {
     #[path = "../subcrate/src/lib.rs"]
-    pub mod subcrate
-    {
+    pub mod subcrate {
         fn count_sheep(sheep: u32) -> &'static str;
     }
 }
@@ -35,8 +33,7 @@ fn subcrate_is_statically_linked_and_not_hotswapped() {
 
         const UPDATED_LIB: &str = r#"
             #[no_mangle]
-            pub fn count_sheep(sheep: u32) -> &'static str
-            {
+            pub extern fn count_sheep(sheep: u32) -> &'static str {
                 "Zzzzzzzz..."
             }
             "#;

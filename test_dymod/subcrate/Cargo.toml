@@ -2,8 +2,9 @@
 name = "subcrate"
 version = "0.1.0"
 authors = ["Claire Harris <claire.harris.000@gmail.com>"]
+edition = "2018"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["dylib"]
 
 [dependencies]

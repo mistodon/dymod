@@ -147,6 +147,12 @@
 ))]
 pub use libloading::{Library, Symbol};
 
+#[cfg(any(
+    feature = "force-dynamic",
+    all(not(feature = "force-static"), debug_assertions)
+))]
+pub const AUTO_RELOAD: bool = cfg!(feature = "auto-reload");
+
 /// Takes a module definition and allows it to be hotswapped in debug
 /// mode.
 ///
@@ -209,73 +215,9 @@ macro_rules! dymod {
     }
 }
 
-#[cfg(all(
-    any(
-        feature = "force-dynamic",
-        all(not(feature = "force-static"), debug_assertions,)
-    ),
-    not(feature = "auto-reload")
-))]
-#[macro_export]
-macro_rules! dymod {
-    (
-        #[path = $libpath: tt]
-        pub mod $modname: ident {
-            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) -> $returntype: ty;)*
-        }
-    ) => {
-        pub mod $modname {
-            use $crate::{Library, Symbol};
-
-            static mut DYLIB: Option<Library> = None;
-            const DYLIB_PATH: &'static str = concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/",
-                stringify!($modname),
-                "/target/debug/lib",
-                stringify!($modname),
-                ".dylib");
-
-            pub fn reload() {
-                // We have to drop it before replacing it.
-                unsafe {
-                    {
-                        DYLIB = None;
-                    }
-
-                    DYLIB = Some(Library::new(&DYLIB_PATH).unwrap())
-                }
-            }
-
-            fn dymod_get_lib() -> &'static Library {
-                unsafe {
-                    if DYLIB.is_none() {
-                        reload();
-                    }
-                    DYLIB.as_ref().unwrap()
-                }
-            }
-
-            $(
-            pub fn $fnname($($argname: $argtype),*) -> $returntype {
-                let lib = dymod_get_lib();
-                unsafe {
-                    let symbol: Symbol<extern fn($($argtype),*) -> $returntype> =
-                        lib.get(stringify!($fnname).as_bytes()).unwrap();
-                    symbol($($argname),*)
-                }
-            }
-            )*
-        }
-    }
-}
-
-#[cfg(all(
-    any(
-        feature = "force-dynamic",
-        all(not(feature = "force-static"), debug_assertions,)
-    ),
-    feature = "auto-reload"
+#[cfg(any(
+    feature = "force-dynamic",
+    all(not(feature = "force-static"), debug_assertions)
 ))]
 #[macro_export]
 macro_rules! dymod {
@@ -289,6 +231,7 @@ macro_rules! dymod {
             use std::time::SystemTime;
             use $crate::{Library, Symbol};
 
+            static mut VERSION: usize = 0;
             static mut DYLIB: Option<Library> = None;
             static mut MODIFIED_TIME: Option<SystemTime> = None;
             const DYLIB_PATH: &'static str = concat!(
@@ -300,23 +243,50 @@ macro_rules! dymod {
                 ".dylib");
 
             pub fn reload() {
-                // We have to drop it before replacing it.
-                unsafe {
-                    {
-                        DYLIB = None;
+                let path = unsafe {
+                    let delete_old = DYLIB.is_some();
+
+                    // Drop the old
+                    DYLIB = None;
+
+                    // Clean up the old
+                    if delete_old {
+                        let old_path = format!("{}{}", DYLIB_PATH, VERSION - 1);
+                        std::fs::remove_file(&old_path).unwrap();
                     }
 
-                    DYLIB = Some(Library::new(&DYLIB_PATH).unwrap())
+                    // Create the new
+                    let new_path = format!("{}{}", DYLIB_PATH, VERSION);
+                    std::fs::copy(DYLIB_PATH, &new_path).unwrap();
+                    new_path
+                };
+
+                // Clear install name to confuse dyld cache
+                let output = std::process::Command::new("install_name_tool")
+                    .arg("-id")
+                    .arg("")
+                    .arg(&path)
+                    .output()
+                    .unwrap();
+
+                assert!(output.status.success(), "install_name_tool failed: {:#?}", output);
+
+                // Load new version
+                unsafe {
+                    VERSION += 1;
+                    DYLIB = Some(Library::new(&path).unwrap())
                 }
             }
 
             fn dymod_file_changed() -> bool {
-                let metadata = std::fs::metadata(&DYLIB_PATH).unwrap();
-                let modified_time = metadata.modified().unwrap();
-                unsafe {
-                    let changed = MODIFIED_TIME.is_some() && MODIFIED_TIME != Some(modified_time);
-                    MODIFIED_TIME = Some(modified_time);
-                    changed
+                $crate::AUTO_RELOAD && {
+                    let metadata = std::fs::metadata(&DYLIB_PATH).unwrap();
+                    let modified_time = metadata.modified().unwrap();
+                    unsafe {
+                        let changed = MODIFIED_TIME.is_some() && MODIFIED_TIME != Some(modified_time);
+                        MODIFIED_TIME = Some(modified_time);
+                        changed
+                    }
                 }
             }
 

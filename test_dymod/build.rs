@@ -4,7 +4,7 @@ fn main() {
         use std::io::Write;
 
         const LIB: &str = r#"#[no_mangle]
-pub extern fn count_sheep(sheep: u32) -> &'static str {
+pub extern "C" fn count_sheep(sheep: u32) -> &'static str {
     match sheep {
         0 => "None",
         1 => "One",

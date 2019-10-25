@@ -33,7 +33,7 @@ fn subcrate_is_statically_linked_and_not_hotswapped() {
 
         const UPDATED_LIB: &str = r#"
             #[no_mangle]
-            pub extern fn count_sheep(sheep: u32) -> &'static str {
+            pub extern "C" fn count_sheep(sheep: u32) -> &'static str {
                 "Zzzzzzzz..."
             }
             "#;

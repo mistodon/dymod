@@ -34,14 +34,14 @@
 //! ```
 //!
 //! Now you need to add the code that you want to hotswap. Any
-//! functions should be `pub extern` and `#[no_mangle]`. See the
+//! functions should be `pub extern "C"` and `#[no_mangle]`. See the
 //! [Limitations]("#limitations") section below for what kind of
 //! code you can put here.
 //!
 //! ```rust,no_run
 //! // subcrate/src/lib.rs
 //! #[no_mangle]
-//! pub extern fn count_sheep(sheep: u32) -> &'static str {
+//! pub extern "C" fn count_sheep(sheep: u32) -> &'static str {
 //!     match sheep {
 //!         0 => "None",
 //!         1 => "One",
@@ -117,21 +117,21 @@
 //! # struct GameState {};
 //! # struct Config {};
 //! #[no_mangle]
-//! pub extern fn game_update(state: &mut GameState) {
+//! pub extern "C" fn game_update(state: &mut GameState) {
 //!     // Modify game state.
 //!     // No need to return anything problematic.
 //!     unimplemented!()
 //! }
 //!
 //! #[no_mangle]
-//! pub extern fn animate_from_to(point_a: [f32; 2], point_b: [f32; 2], time: f32) -> [f32; 2] {
+//! pub extern "C" fn animate_from_to(point_a: [f32; 2], point_b: [f32; 2], time: f32) -> [f32; 2] {
 //!     // Returns only stack-allocated values and so is safe.
 //!     // Specific kind of animation can be changed on the fly.
 //!     unimplemented!()
 //! }
 //!
 //! #[no_mangle]
-//! pub extern fn get_configuration() -> Config {
+//! pub extern "C" fn get_configuration() -> Config {
 //!     // Again, returns only stack-allocated values.
 //!     // Allows changing some configuration while running.
 //!     Config
@@ -252,12 +252,12 @@ macro_rules! dymod {
                     // Clean up the old
                     if delete_old {
                         let old_path = format!("{}{}", DYLIB_PATH, VERSION - 1);
-                        std::fs::remove_file(&old_path).unwrap();
+                        std::fs::remove_file(&old_path).expect("Failed to delete old dylib");
                     }
 
                     // Create the new
                     let new_path = format!("{}{}", DYLIB_PATH, VERSION);
-                    std::fs::copy(DYLIB_PATH, &new_path).unwrap();
+                    std::fs::copy(DYLIB_PATH, &new_path).expect("Failed to copy new dylib");
                     new_path
                 };
 
@@ -267,27 +267,29 @@ macro_rules! dymod {
                     .arg("")
                     .arg(&path)
                     .output()
-                    .unwrap();
+                    .expect("Failed to start install_name_tool");
 
                 assert!(output.status.success(), "install_name_tool failed: {:#?}", output);
 
                 // Load new version
                 unsafe {
                     VERSION += 1;
-                    DYLIB = Some(Library::new(&path).unwrap())
+                    DYLIB = Some(Library::new(&path).expect("Failed to load dylib"))
                 }
             }
 
             fn dymod_file_changed() -> bool {
-                $crate::AUTO_RELOAD && {
-                    let metadata = std::fs::metadata(&DYLIB_PATH).unwrap();
-                    let modified_time = metadata.modified().unwrap();
+                fn file_changed() -> Result<bool, std::io::Error> {
+                    let metadata = std::fs::metadata(&DYLIB_PATH)?;
+                    let modified_time = metadata.modified()?;
                     unsafe {
                         let changed = MODIFIED_TIME.is_some() && MODIFIED_TIME != Some(modified_time);
                         MODIFIED_TIME = Some(modified_time);
-                        changed
+                        Ok(changed)
                     }
                 }
+
+                $crate::AUTO_RELOAD && file_changed().unwrap_or(false)
             }
 
             fn dymod_get_lib() -> &'static Library {
@@ -303,8 +305,8 @@ macro_rules! dymod {
             pub fn $fnname($($argname: $argtype),*) -> $returntype {
                 let lib = dymod_get_lib();
                 unsafe {
-                    let symbol: Symbol<extern fn($($argtype),*) -> $returntype> =
-                        lib.get(stringify!($fnname).as_bytes()).unwrap();
+                    let symbol: Symbol<extern "C" fn($($argtype),*) -> $returntype> =
+                        lib.get(stringify!($fnname).as_bytes()).expect("Failed to get symbol from dylib");
                     symbol($($argname),*)
                 }
             }

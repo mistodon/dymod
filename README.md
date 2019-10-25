@@ -39,13 +39,13 @@ Your subcrate must also be compiled as a dylib, so in your `subcrate/Cargo.toml`
 crate-type = ["dylib"]
 ```
 
-Now you need to add the code that you want to hotswap. Any functions should be `pub extern` and `#[no_mangle]`. See the [Limitations]("#limitations") section below for what kind of code you can put here.
+Now you need to add the code that you want to hotswap. Any functions should be `pub extern "C"` and `#[no_mangle]`. See the [Limitations]("#limitations") section below for what kind of code you can put here.
 
 ```rust
 // subcrate/src/lib.rs
 
 #[no_mangle]
-pub extern fn count_sheep(sheep: u32) -> &'static str {
+pub extern "C" fn count_sheep(sheep: u32) -> &'static str {
     match sheep {
         0 => "None",
         1 => "One",
@@ -110,21 +110,21 @@ Here are some examples of code that should work and would be useful to hotswap:
 
 ```rust
 #[no_mangle]
-pub extern fn game_update(state: &mut GameState) {
+pub extern "C" fn game_update(state: &mut GameState) {
     // Modify game state.
     // No need to return anything problematic.
     unimplemented!()
 }
 
 #[no_mangle]
-pub extern fn animate_from_to(point_a: [f32; 2], point_b: [f32; 2], time: f32) -> [f32; 2] {
+pub extern "C" fn animate_from_to(point_a: [f32; 2], point_b: [f32; 2], time: f32) -> [f32; 2] {
     // Returns only stack-allocated values and so is safe.
     // Specific kind of animation can be changed on the fly.
     unimplemented!()
 }
 
 #[no_mangle]
-pub extern fn get_configuration() -> Config {
+pub extern "C" fn get_configuration() -> Config {
     // Again, returns only stack-allocated values.
     // Allows changing some configuration while running.
     Config {

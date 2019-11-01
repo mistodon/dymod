@@ -231,7 +231,7 @@ macro_rules! dymod {
             use std::time::SystemTime;
             use $crate::{Library, Symbol};
 
-            #[cfg(target_os = "macos")]
+            #[cfg(unix)]
             static mut VERSION: usize = 0;
 
             static mut DYLIB: Option<Library> = None;
@@ -264,7 +264,7 @@ macro_rules! dymod {
                 stringify!($modname),
                 ".dll");
 
-            #[cfg(target_os = "macos")]
+            #[cfg(unix)]
             pub fn reload() {
                 let path = unsafe {
                     let delete_old = DYLIB.is_some();
@@ -285,14 +285,17 @@ macro_rules! dymod {
                 };
 
                 // Clear install name to confuse dyld cache
-                let output = std::process::Command::new("install_name_tool")
-                    .arg("-id")
-                    .arg("")
-                    .arg(&path)
-                    .output()
-                    .expect("Failed to start install_name_tool");
+                #[cfg(target_os = "macos")]
+                {
+                    let output = std::process::Command::new("install_name_tool")
+                        .arg("-id")
+                        .arg("")
+                        .arg(&path)
+                        .output()
+                        .expect("Failed to start install_name_tool");
 
-                assert!(output.status.success(), "install_name_tool failed: {:#?}", output);
+                    assert!(output.status.success(), "install_name_tool failed: {:#?}", output);
+                }
 
                 // Load new version
                 unsafe {
@@ -301,13 +304,13 @@ macro_rules! dymod {
                 }
             }
 
-            #[cfg(not(target_os = "macos"))]
+            #[cfg(not(unix))]
             pub fn reload() {
-                // Drop the old
-                DYLIB = None;
-
-                // Load new version
                 unsafe {
+                    // Drop the old
+                    DYLIB = None;
+
+                    // Load new version
                     DYLIB = Some(Library::new(&DYLIB_PATH).expect("Failed to load dylib"))
                 }
             }

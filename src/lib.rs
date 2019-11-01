@@ -231,9 +231,13 @@ macro_rules! dymod {
             use std::time::SystemTime;
             use $crate::{Library, Symbol};
 
+            #[cfg(target_os = "macos")]
             static mut VERSION: usize = 0;
+
             static mut DYLIB: Option<Library> = None;
             static mut MODIFIED_TIME: Option<SystemTime> = None;
+
+            #[cfg(target_os = "macos")]
             const DYLIB_PATH: &'static str = concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/",
@@ -242,6 +246,25 @@ macro_rules! dymod {
                 stringify!($modname),
                 ".dylib");
 
+            #[cfg(all(unix, not(target_os = "macos")))]
+            const DYLIB_PATH: &'static str = concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/",
+                stringify!($modname),
+                "/target/debug/lib",
+                stringify!($modname),
+                ".so");
+
+            #[cfg(windows)]
+            const DYLIB_PATH: &'static str = concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/",
+                stringify!($modname),
+                "/target/debug/lib",
+                stringify!($modname),
+                ".dll");
+
+            #[cfg(target_os = "macos")]
             pub fn reload() {
                 let path = unsafe {
                     let delete_old = DYLIB.is_some();
@@ -275,6 +298,17 @@ macro_rules! dymod {
                 unsafe {
                     VERSION += 1;
                     DYLIB = Some(Library::new(&path).expect("Failed to load dylib"))
+                }
+            }
+
+            #[cfg(not(target_os = "macos"))]
+            pub fn reload() {
+                // Drop the old
+                DYLIB = None;
+
+                // Load new version
+                unsafe {
+                    DYLIB = Some(Library::new(&DYLIB_PATH).expect("Failed to load dylib"))
                 }
             }
 

@@ -207,7 +207,7 @@ macro_rules! dymod {
     (
         #[path = $libpath: tt]
         pub mod $modname: ident {
-            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) -> $returntype: ty;)*
+            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) $(-> $returntype: ty)? ;)*
         }
     ) => {
         #[path = $libpath]
@@ -224,7 +224,7 @@ macro_rules! dymod {
     (
         #[path = $libpath: tt]
         pub mod $modname: ident {
-            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) -> $returntype: ty;)*
+            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) $(-> $returntype: ty)? ;)*
         }
     ) => {
         pub mod $modname {
@@ -339,10 +339,10 @@ macro_rules! dymod {
             }
 
             $(
-            pub fn $fnname($($argname: $argtype),*) -> $returntype {
+            pub fn $fnname($($argname: $argtype),*) $(-> $returntype)? {
                 let lib = dymod_get_lib();
                 unsafe {
-                    let symbol: Symbol<extern "C" fn($($argtype),*) -> $returntype> =
+                    let symbol: Symbol<extern "C" fn($($argtype),*) $(-> $returntype)?> =
                         lib.get(stringify!($fnname).as_bytes()).expect("Failed to get symbol from dylib");
                     symbol($($argname),*)
                 }

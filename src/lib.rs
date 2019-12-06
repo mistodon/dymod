@@ -207,7 +207,7 @@ macro_rules! dymod {
     (
         #[path = $libpath: tt]
         pub mod $modname: ident {
-            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) $(-> $returntype: ty)? ;)*
+            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* $(,)? ) $(-> $returntype: ty)? ;)*
         }
     ) => {
         #[path = $libpath]
@@ -224,7 +224,7 @@ macro_rules! dymod {
     (
         #[path = $libpath: tt]
         pub mod $modname: ident {
-            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* ) $(-> $returntype: ty)? ;)*
+            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* $(,)? ) $(-> $returntype: ty)? ;)*
         }
     ) => {
         pub mod $modname {

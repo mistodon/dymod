@@ -266,7 +266,6 @@ macro_rules! dymod {
                 stringify!($modname),
                 ".dll");
 
-            #[cfg(unix)]
             pub fn reload() {
                 let path = unsafe {
                     let delete_old = DYLIB.is_some();
@@ -306,16 +305,16 @@ macro_rules! dymod {
                 }
             }
 
-            #[cfg(not(unix))]
-            pub fn reload() {
-                unsafe {
-                    // Drop the old
-                    DYLIB = None;
+            // #[cfg(not(unix))]
+            // pub fn reload() {
+            //     unsafe {
+            //         // Drop the old
+            //         DYLIB = None;
 
-                    // Load new version
-                    DYLIB = Some(Library::new(&DYLIB_PATH).expect("Failed to load dylib"))
-                }
-            }
+            //         // Load new version
+            //         DYLIB = Some(Library::new(&DYLIB_PATH).expect("Failed to load dylib"))
+            //     }
+            // }
 
             fn dymod_file_changed() -> bool {
                 fn file_changed() -> Result<bool, std::io::Error> {

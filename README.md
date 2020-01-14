@@ -14,7 +14,7 @@ Note that this is _very_ much experimental. The current version of this crate is
 | OS | Works? |
 |----|--------|
 | macOS |✅|
-| Linux |❌|
+| Linux |✅|
 | Windows |❌|
 
 ## Usage

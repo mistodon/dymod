@@ -7,6 +7,7 @@ description = """A macro to allow hotswapping code for a module in debug mode, b
 repository = "https://github.com/Pirh/dymod"
 readme = "README.md"
 keywords = ["linking", "static", "dynamic", "hotswapping", "dylib"]
+categories = ["game-development", "development-tools"]
 license = "CC0-1.0"
 
 [badges]

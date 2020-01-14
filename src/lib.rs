@@ -1,3 +1,5 @@
+#![allow(clippy::needless_doctest_main)]
+
 //! # dymod
 //!
 //! This crate provides a macro, `dymod!`, which allows you to

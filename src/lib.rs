@@ -233,7 +233,6 @@ macro_rules! dymod {
             use std::time::SystemTime;
             use $crate::{Library, Symbol};
 
-            // #[cfg(unix)]
             static mut VERSION: usize = 0;
 
             static mut DYLIB: Option<Library> = None;
@@ -304,17 +303,6 @@ macro_rules! dymod {
                     DYLIB = Some(Library::new(&path).expect("Failed to load dylib"))
                 }
             }
-
-            // #[cfg(not(unix))]
-            // pub fn reload() {
-            //     unsafe {
-            //         // Drop the old
-            //         DYLIB = None;
-
-            //         // Load new version
-            //         DYLIB = Some(Library::new(&DYLIB_PATH).expect("Failed to load dylib"))
-            //     }
-            // }
 
             fn dymod_file_changed() -> bool {
                 fn file_changed() -> Result<bool, std::io::Error> {

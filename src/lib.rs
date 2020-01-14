@@ -233,7 +233,7 @@ macro_rules! dymod {
             use std::time::SystemTime;
             use $crate::{Library, Symbol};
 
-            #[cfg(unix)]
+            // #[cfg(unix)]
             static mut VERSION: usize = 0;
 
             static mut DYLIB: Option<Library> = None;

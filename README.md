@@ -11,11 +11,7 @@ Note that this is _very_ much experimental. The current version of this crate is
 
 ## OS Compatibility
 
-| OS | Works? |
-|----|--------|
-| macOS |✅|
-| Linux |✅|
-| Windows |❌|
+This crate has been tested on macOS (10.14.5), Ubuntu Linux (18.04.1), and Windows 10 (1903). It is however, kind of a weird crate, so I wouldn't be surprised if it failed on some other OSes. Let me know!
 
 ## Usage
 

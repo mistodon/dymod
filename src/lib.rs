@@ -262,7 +262,7 @@ macro_rules! dymod {
                 env!("CARGO_MANIFEST_DIR"),
                 "/",
                 stringify!($modname),
-                "/target/debug/lib",
+                "/target/debug/",
                 stringify!($modname),
                 ".dll");
 

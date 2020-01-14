@@ -230,13 +230,14 @@ macro_rules! dymod {
         }
     ) => {
         pub mod $modname {
-            use std::time::SystemTime;
+            use super::*;
+
             use $crate::{Library, Symbol};
 
             static mut VERSION: usize = 0;
 
             static mut DYLIB: Option<Library> = None;
-            static mut MODIFIED_TIME: Option<SystemTime> = None;
+            static mut MODIFIED_TIME: Option<std::time::SystemTime> = None;
 
             #[cfg(target_os = "macos")]
             const DYLIB_PATH: &'static str = concat!(

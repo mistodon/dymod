@@ -6,10 +6,9 @@
 //! specify a Rust module which will by dynamically loaded and
 //! hotswapped in debug mode, but statically linked in release mode.
 //!
-//! Note that this is _very_ much experimental. The current version
-//! of this crate is very opinionated about how you structure your
-//! dynamic code. Hopefully this will be relaxed a little in future.
-//!
+//! The current version of this crate is very opinionated about how
+//! you structure your dynamic code. Hopefully this can be relaxed a
+//! little in future.
 //!
 //! ## Usage
 //!
@@ -36,9 +35,7 @@
 //! ```
 //!
 //! Now you need to add the code that you want to hotswap. Any
-//! functions should be `pub extern "C"` and `#[no_mangle]`. See the
-//! [Limitations]("#limitations") section below for what kind of
-//! code you can put here.
+//! functions should be `pub extern "C"` and `#[no_mangle]`.
 //!
 //! ```rust,no_run
 //! // subcrate/src/lib.rs
@@ -58,7 +55,7 @@
 //! with the functions that are dynamically available from it.
 //!
 //! ```rust,ignore
-//! // mycrate/src/main.rs
+//! // src/main.rs
 //! use dymod::dymod;
 //!
 //! dymod! {
@@ -71,8 +68,9 @@
 //! fn main() {
 //!     assert_eq!(subcrate::count_sheep(3), "Many");
 //!     loop {
-//!         // You can now edit the count_sheep function and see
-//!         // the results change while this code is running.
+//!         // You can now edit the count_sheep function,
+//!         // recompile `subcrate`, and see the result change
+//!         // while this code is running.
 //!         println!("{}", subcrate::count_sheep(3));
 //!     }
 //! }
@@ -80,80 +78,90 @@
 //!
 //! ## Safety
 //!
-//! This is really, really unsafe! But only in debug mode. In release
-//! mode, the module you specify is linked statically as if it was a
-//! regular module, and there should be no safety concerns.
+//! In release mode, the module you specify is linked statically
+//! as if it was a regular module, and there should be no safety
+//! concerns.
+//!
+//! However, in debug mode, when the code is being dynamically
+//! linked, there are a lot of things that can go wrong. It's
+//! possible to accidentally trigger panics, or undefined
+//! behaviour.
 //!
 //! Here is a partial list of what can go wrong in debug mode:
 //!
 //! -   If you are holding on to data owned by the dylib when the
 //!     dylib is hotswapped, you will get undefined behaviour.
-//! -   If you take ownership of any data allocated by the dylib,
-//!     dropping that data will probably cause a segfault.
+//! -   Unless both crates use the system allocator (which is luckily
+//!     the default since Rust 1.32.0) then dropping data that
+//!     was allocated by the other crate will cause a segfault.
 //! -   If you change the definition of a struct on either side of
-//!     the boundary, you could get undefined behaviour
+//!     the boundary, you could get undefined behaviour. (This
+//!     includes adding or removing enum variants.)
+//! -   If you specify the function signatures incorrectly in the
+//!     `dymod!` macro, you will get undefined behaviour.
 //!
+//! Because of these limitations, it is recommended that you use
+//! a small number of dynamic functions, and pass types which are
+//! unlikely to change much. For example, at the simplest:
 //!
-//! ## Limitations
+//! ```rust,ignore
+//! use dymod::dymod;
 //!
-//! So as described above, you cannot rely on hotswapping to work if
-//! you change struct definitions while your code is running.
-//!
-//! You also cannot reliably take ownership of heap allocated data
-//! from one side of the boundary to the other.
-//!
-//! Generic functions will not work either.
-//!
-//! This is again, just a partial list. There really are quite a lot
-//! of constraints on what you can do.
-//!
-//!
-//! ## So what is this actually good for then?
-//!
-//! I suppose we'll see!
-//!
-//! Here are some examples of code that should work and would be
-//! useful to hotswap:
-//!
-//! ```rust,no_run
-//! # struct GameState {};
-//! # struct Config {};
-//! #[no_mangle]
-//! pub extern "C" fn game_update(state: &mut GameState) {
-//!     // Modify game state.
-//!     // No need to return anything problematic.
-//!     unimplemented!()
-//! }
-//!
-//! #[no_mangle]
-//! pub extern "C" fn animate_from_to(point_a: [f32; 2], point_b: [f32; 2], time: f32) -> [f32; 2] {
-//!     // Returns only stack-allocated values and so is safe.
-//!     // Specific kind of animation can be changed on the fly.
-//!     unimplemented!()
-//! }
-//!
-//! #[no_mangle]
-//! pub extern "C" fn get_configuration() -> Config {
-//!     // Again, returns only stack-allocated values.
-//!     // Allows changing some configuration while running.
-//!     Config
-//!     {
-//!         // ...
+//! dymod! {
+//!     #[path = "../subcrate/src/lib.rs"]
+//!     pub mod subcrate {
+//!         fn update_application_state(state: &mut ApplicationState);
 //!     }
 //! }
 //! ```
+//!
+//! The above function would give you the flexibility to tweak any
+//! application state at runtime, but the interface is simple enough
+//! that it is easy to maintain.
+//!
+//! ## Manual reloading
+//!
+//! By default, the `auto-reload` feature is enabled, which will
+//! reload the dynamic library whenever it changes (at the point
+//! you try to call one of its functions).
+//!
+//! If you would prefer to handle reloading yourself, you can disable
+//! the feature (`--no-default-features`) and reload it with the
+//! `reload()` function of the dymod module.
+//!
+//! For this same reason, it is currently not possible to define
+//! a function named `reload` within your dymod module.
 
 #[cfg(any(
     feature = "force-dynamic",
     all(not(feature = "force-static"), debug_assertions)
 ))]
+#[doc(hidden)]
 pub use libloading::{Library, Symbol};
 
 #[cfg(any(
     feature = "force-dynamic",
     all(not(feature = "force-static"), debug_assertions)
 ))]
+#[doc(hidden)]
 pub const AUTO_RELOAD: bool = cfg!(feature = "auto-reload");
+
+#[cfg(any(
+    feature = "force-static",
+    all(not(feature = "force-dynamic"), not(debug_assertions))
+))]
+#[macro_export]
+macro_rules! dymod {
+    (
+        #[path = $libpath: tt]
+        pub mod $modname: ident {
+            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* $(,)? ) $(-> $returntype: ty)? ;)*
+        }
+    ) => {
+        #[path = $libpath]
+        pub mod $modname;
+    }
+}
 
 /// Takes a module definition and allows it to be hotswapped in debug
 /// mode.
@@ -183,40 +191,19 @@ pub const AUTO_RELOAD: bool = cfg!(feature = "auto-reload");
 ///
 /// # Panics
 ///
-/// Panics can occur _only_ in debug mode as a result of the various
-/// pitfalls of dynamic linking. These can be the result of:
+/// Beyond the normal risk of your code panicking, there are a few risks
+/// associated with dynamic linking in debug mode. In release mode, static
+/// linking occurs and those risks don't apply.
 ///
-/// 1.  Dropping data which was allocated in the other library.
-/// 2.  Holding onto references to data that is dropped when the
-///     dylib is hotswapped.
-/// 3.  Changing the definition of a struct that is passed to or from
-///     the other library.
-/// 4.  Very many other things.
-///
-/// These problems should all disappear in release mode, where this
-/// code is just statically linked as normal.
+/// See the [crate-level documentation](index.html) for more information.
 ///
 /// # Safety
 ///
-/// As above, dynamic linking is inherently unsafe. In debug mode,
-/// these things can cause a variety of undefined behaviour.
-#[cfg(any(
-    feature = "force-static",
-    all(not(feature = "force-dynamic"), not(debug_assertions))
-))]
-#[macro_export]
-macro_rules! dymod {
-    (
-        #[path = $libpath: tt]
-        pub mod $modname: ident {
-            $(fn $fnname: ident ( $($argname: ident : $argtype: ty),* $(,)? ) $(-> $returntype: ty)? ;)*
-        }
-    ) => {
-        #[path = $libpath]
-        pub mod $modname;
-    }
-}
-
+/// As above, dynamic linking is inherently unsafe. In release mode,
+/// static linking occurs and everything is safe. In debug mode,
+/// a variety of undefined behavior is possible.
+///
+/// See the [crate-level documentation](index.html) for more information.
 #[cfg(any(
     feature = "force-dynamic",
     all(not(feature = "force-static"), debug_assertions)

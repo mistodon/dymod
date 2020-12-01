@@ -13,11 +13,11 @@ license = "CC0-1.0"
 [badges]
 travis-ci = { repository = "mistodon/dymod", branch = "master" }
 
-[dependencies]
-libloading = "~0.5.0"
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+libloading = { version = "~0.5.0", optional = true }
 
 [features]
-default = ["auto-reload"]
+default = ["auto-reload", "libloading"]
 force-static = []
-force-dynamic = []
+force-dynamic = ["libloading"]
 auto-reload = []

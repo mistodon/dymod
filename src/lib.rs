@@ -132,6 +132,9 @@
 //! For this same reason, it is currently not possible to define
 //! a function named `reload` within your dymod module.
 
+#[cfg(all(target_arch = "wasm32", feature = "force-dynamic"))]
+compile_error!("The force-dynamic feature is not supported on WASM targets.");
+
 #[cfg(any(
     feature = "force-dynamic",
     all(not(feature = "force-static"), debug_assertions)

@@ -1,7 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -eu
+set -o pipefail
 
+# WASM target
+echo -e "\033[36;1mRunning WASM debug/force-static tests:\033[0m"
+cargo check --target wasm32-unknown-unknown --features force-static && (cd test_dymod && cargo check --target wasm32-unknown-unknown --features force-static)
+
+echo -e "\033[36;1mRunning WASM release/force-static tests:\033[0m"
+cargo check --target wasm32-unknown-unknown --release --features force-static && (cd test_dymod && cargo check --target wasm32-unknown-unknown --release --features force-static)
+
+# Default target
 echo -e "\033[36;1mRunning debug tests:\033[0m"
 cargo test && (cd test_dymod && cargo test)
 

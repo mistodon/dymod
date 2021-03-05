@@ -1,7 +1,7 @@
 [package]
 name = "dymod"
 version = "0.3.0"
-authors = ["Vi <***redacted.email@redacted.nope***>"]
+authors = ["Vi <violet@hey.com>"]
 edition = "2018"
 description = """A macro to allow hotswapping code for a module in debug mode, but statically linking it safely in release mode."""
 repository = "https://github.com/Pirh/dymod"

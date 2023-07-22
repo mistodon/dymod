@@ -137,7 +137,11 @@ compile_error!("The force-dynamic feature is not supported on WASM targets.");
 
 #[cfg(any(
     feature = "force-dynamic",
-    all(not(feature = "force-static"), debug_assertions)
+    all(
+        not(feature = "force-static"),
+        not(target_arch = "wasm32"),
+        debug_assertions
+    )
 ))]
 #[doc(hidden)]
 pub use libloading::{Library, Symbol};
@@ -163,7 +167,7 @@ macro_rules! dymod {
     ) => {
         #[path = $libpath]
         pub mod $modname;
-    }
+    };
 }
 
 /// Takes a module definition and allows it to be hotswapped in debug

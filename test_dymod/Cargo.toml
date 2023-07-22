@@ -1,8 +1,8 @@
 [package]
 name = "test_dymod"
 version = "0.1.0"
-authors = ["***Realname*** ***Lastname*** <***realname***.***lastname***.000@gmail.com>"]
-edition = "2018"
+authors = ["Vi <violet@hey.com>"]
+edition = "2021"
 
 [dependencies.dymod]
 path = ".."

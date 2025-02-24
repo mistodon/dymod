@@ -32,7 +32,7 @@ fn subcrate_is_statically_linked_and_not_hotswapped() {
         use std::io::Write;
 
         const UPDATED_LIB: &str = r#"
-            #[no_mangle]
+            #[unsafe(no_mangle)]
             pub extern "C" fn count_sheep(sheep: u32) -> &'static str {
                 "Zzzzzzzz..."
             }

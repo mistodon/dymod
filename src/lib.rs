@@ -35,11 +35,11 @@
 //! ```
 //!
 //! Now you need to add the code that you want to hotswap. Any
-//! functions should be `pub extern "C"` and `#[no_mangle]`.
+//! functions should be `pub extern "C"` and `#[unsafe(no_mangle)]`.
 //!
 //! ```rust,no_run
 //! // subcrate/src/lib.rs
-//! #[no_mangle]
+//! #[unsafe(no_mangle)]
 //! pub extern "C" fn count_sheep(sheep: u32) -> &'static str {
 //!     match sheep {
 //!         0 => "None",

@@ -1,8 +1,8 @@
 [package]
 name = "dymod"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Vi <violet@hey.com>"]
-edition = "2021"
+edition = "2024"
 description = """A macro to allow hotswapping code for a module in debug mode, but statically linking it safely in release mode."""
 repository = "https://github.com/mistodon/dymod"
 readme = "README.md"
@@ -14,7 +14,7 @@ license = "CC0-1.0"
 travis-ci = { repository = "mistodon/dymod", branch = "master" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-libloading = { version = "0.5", optional = true }
+libloading = { version = "0.8", optional = true }
 
 [features]
 default = ["auto-reload", "libloading"]

@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/mistodon/dymod.svg?branch=master)](https://travis-ci.org/mistodon/dymod)
 [![Crates.io](https://img.shields.io/crates/v/dymod.svg)](https://crates.io/crates/dymod)
-[![Docs.rs](https://docs.rs/dymod/badge.svg)](https://docs.rs/dymod/0.2.0/dymod/)
+[![Docs.rs](https://docs.rs/dymod/badge.svg)](https://docs.rs/dymod/0.5.0/dymod/)
 
 This crate provides a macro, `dymod!`, which allows you to specify a Rust module which will by dynamically loaded and hotswapped in debug mode, but statically linked in release mode.
 
